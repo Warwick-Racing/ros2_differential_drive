@@ -74,8 +74,10 @@ class DiffTf(Node):
         self.rate_hz = self.declare_parameter("rate_hz", 10.0).value # the rate at which to publish the transform
         self.create_timer(1.0/self.rate_hz, self.update)  
 
+        self.tf_publish = self.declare_parameter('tf_publish', True).value  # publish the transform
+
         self.ticks_meter = float(
-            self.declare_parameter('ticks_meter', 50).value)  # The number of wheel encoder ticks per meter of travel
+            self.declare_parameter('ticks_meter', 50.0).value)  # The number of wheel encoder ticks per meter of travel
         self.base_width = float(self.declare_parameter('base_width', 0.245).value)  # The wheel base width in meters
 
         self.base_frame_id = self.declare_parameter('base_frame_id',
@@ -154,19 +156,22 @@ class DiffTf(Node):
         quaternion.z = sin(self.th / 2)
         quaternion.w = cos(self.th / 2)
 
-        transform_stamped_msg = TransformStamped()
-        transform_stamped_msg.header.stamp = self.get_clock().now().to_msg()
-        transform_stamped_msg.header.frame_id = self.base_frame_id
-        transform_stamped_msg.child_frame_id = self.odom_frame_id
-        transform_stamped_msg.transform.translation.x = self.x
-        transform_stamped_msg.transform.translation.y = self.y
-        transform_stamped_msg.transform.translation.z = 0.0
-        transform_stamped_msg.transform.rotation.x = quaternion.x
-        transform_stamped_msg.transform.rotation.y = quaternion.y
-        transform_stamped_msg.transform.rotation.z = quaternion.z
-        transform_stamped_msg.transform.rotation.w = quaternion.w
+        if self.tf_publish:
+            transform_stamped_msg = TransformStamped()
+            transform_stamped_msg.header.stamp = self.get_clock().now().to_msg()
+            transform_stamped_msg.header.frame_id = self.odom_frame_id
+            transform_stamped_msg.child_frame_id = self.base_frame_id
+            #transform_stamped_msg.header.frame_id = self.base_frame_id
+            #transform_stamped_msg.child_frame_id = self.odom_frame_id
+            transform_stamped_msg.transform.translation.x = self.x
+            transform_stamped_msg.transform.translation.y = self.y
+            transform_stamped_msg.transform.translation.z = 0.0
+            transform_stamped_msg.transform.rotation.x = quaternion.x
+            transform_stamped_msg.transform.rotation.y = quaternion.y
+            transform_stamped_msg.transform.rotation.z = quaternion.z
+            transform_stamped_msg.transform.rotation.w = quaternion.w
 
-        self.odom_broadcaster.sendTransform(transform_stamped_msg)
+            self.odom_broadcaster.sendTransform(transform_stamped_msg)
 
         odom = Odometry()
         odom.header.stamp = now.to_msg()
